@@ -1,0 +1,77 @@
+{
+  "header": [
+    {
+      "name": "directives par défaut, API et route de rapport",
+      "apiOrigin": "https://api.exemple.com/v1/produits?page=2",
+      "extra": {},
+      "reportUri": "/api/csp-report",
+      "expected": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; media-src 'self'; connect-src 'self' https://api.exemple.com; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; report-uri /api/csp-report"
+    },
+    {
+      "name": "origines ajoutées, dédoublonnées, et 'none' remplacé",
+      "apiOrigin": null,
+      "extra": {
+        "script-src": ["https://www.googletagmanager.com", "'self'"],
+        "object-src": ["https://lecteur.exemple.com"]
+      },
+      "reportUri": null,
+      "expected": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; media-src 'self'; connect-src 'self'; frame-src 'self'; worker-src 'self' blob:; object-src https://lecteur.exemple.com; base-uri 'self'; frame-ancestors 'self'"
+    }
+  ],
+  "reports": [
+    {
+      "name": "script externe chargé par un autre script, query strings retirées",
+      "body": "{\"csp-report\":{\"blocked-uri\":\"https://cdn.exemple.com/lib.js?token=secret\",\"effective-directive\":\"script-src-elem\",\"violated-directive\":\"script-src-elem\",\"document-uri\":\"https://site.exemple.fr/chemin?email=visiteur@exemple.fr\",\"source-file\":\"https://www.googletagmanager.com/gtm.js?id=GTM-ABC\"}}",
+      "status": 204,
+      "line": "[csp-report] https://cdn.exemple.com a besoin d'une autorisation de type script (script-src) — bloqué sur /chemin, chargé par https://www.googletagmanager.com/gtm.js"
+    },
+    {
+      "name": "style en ligne, directive tirée de violated-directive, sans source",
+      "body": "{\"csp-report\":{\"blocked-uri\":\"inline\",\"violated-directive\":\"style-src-attr 'self'\",\"document-uri\":\"https://site.exemple.fr/contact\"}}",
+      "status": 204,
+      "line": "[csp-report] inline a besoin d'une autorisation de type feuille de style (style-src) — bloqué sur /contact"
+    },
+    {
+      "name": "eval, mot-clé gardé tel quel",
+      "body": "{\"csp-report\":{\"blocked-uri\":\"eval\",\"effective-directive\":\"script-src\",\"document-uri\":\"https://site.exemple.fr/\"}}",
+      "status": 204,
+      "line": "[csp-report] eval a besoin d'une autorisation de type script (script-src) — bloqué sur /"
+    },
+    {
+      "name": "affichage du site en iframe",
+      "body": "{\"csp-report\":{\"blocked-uri\":\"https://autre.exemple.net/page\",\"effective-directive\":\"frame-ancestors\",\"document-uri\":\"https://site.exemple.fr/catalogue\"}}",
+      "status": 204,
+      "line": "[csp-report] https://autre.exemple.net a besoin d'une autorisation de type affichage du site en iframe (frame-ancestors) — bloqué sur /catalogue"
+    },
+    {
+      "name": "appel réseau vers l'API",
+      "body": "{\"csp-report\":{\"blocked-uri\":\"https://api.autre.exemple.com/v2/panier\",\"effective-directive\":\"connect-src\",\"document-uri\":\"https://site.exemple.fr/panier\",\"source-file\":\"https://site.exemple.fr/_next/static/chunks/app.js\"}}",
+      "status": 204,
+      "line": "[csp-report] https://api.autre.exemple.com a besoin d'une autorisation de type appel réseau (connect-src) — bloqué sur /panier, chargé par https://site.exemple.fr/_next/static/chunks/app.js"
+    },
+    {
+      "name": "directive inconnue, gardée brute",
+      "body": "{\"csp-report\":{\"blocked-uri\":\"https://site.exemple.fr/manifest.json\",\"effective-directive\":\"manifest-src\",\"document-uri\":\"https://site.exemple.fr/\"}}",
+      "status": 204,
+      "line": "[csp-report] https://site.exemple.fr a besoin d'une autorisation de type manifest-src (manifest-src) — bloqué sur /"
+    },
+    {
+      "name": "JSON invalide",
+      "body": "{\"csp-report\":",
+      "status": 400,
+      "line": null
+    },
+    {
+      "name": "JSON sans csp-report",
+      "body": "{\"type\":\"csp-violation\"}",
+      "status": 400,
+      "line": null
+    },
+    {
+      "name": "csp-report qui n'est pas un objet",
+      "body": "{\"csp-report\":\"texte\"}",
+      "status": 400,
+      "line": null
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+FROM node:24.14.1-alpine
+
+# git : lint-staged lit l'index pour le hook pre-commit
+RUN apk add --no-cache git
+ARG UID=1000
+ARG GID=1000
+RUN mkdir -p /app/node_modules && chown ${UID}:${GID} /app/node_modules
+WORKDIR /app

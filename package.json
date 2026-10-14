@@ -1,0 +1,56 @@
+{
+  "name": "@kewinmarchand/csp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Content-Security-Policy en mode Report-Only : en-tête, route de rapport et phrase de journal, pour tout site (JS et PHP)",
+  "license": "MIT",
+  "author": "Kewin Marchand <kewin.marchand@gmail.com>",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:check": "rm -rf /tmp/csp-dist && tsc -p tsconfig.build.json --outDir /tmp/csp-dist && diff -r /tmp/csp-dist dist && echo \"dist à jour.\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-simple-import-sort": "^14.0.0",
+    "globals": "^17.13.0",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
+  },
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=24.14.0"
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "@kewinmarchand/csp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Content-Security-Policy en mode Report-Only : en-tête, route de rapport et phrase de journal, pour tout site (JS et PHP)",

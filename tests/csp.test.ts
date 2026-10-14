@@ -91,7 +91,21 @@ describe('route', () => {
     expect(response.status).toBe(413)
   })
 
-  it("s'arrête dès la limite dépassée sur un envoi par morceaux", async () => {
+  it('lit tout un corps un peu trop long avant de répondre 413, sans couper la connexion', async () => {
+    let pulled = 0
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1
+        controller.enqueue(new TextEncoder().encode('a'.repeat(6_000)))
+        if (pulled === 2) controller.close()
+      },
+    })
+    const response = await cspReportRoute()(post(stream))
+    expect(response.status).toBe(413)
+    expect(pulled).toBe(2)
+  })
+
+  it("s'arrête au-delà de 4 fois la limite sur un envoi par morceaux sans fin", async () => {
     let sent = 0
     const stream = new ReadableStream<Uint8Array>({
       pull(controller) {
@@ -102,7 +116,7 @@ describe('route', () => {
     })
     const response = await cspReportRoute()(post(stream))
     expect(response.status).toBe(413)
-    expect(sent).toBeLessThan(10)
+    expect(sent).toBeLessThanOrEqual(11)
   })
 })
 

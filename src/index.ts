@@ -165,20 +165,33 @@ export const handleCspReport = (body: string): CspReportResult => {
   return { status: 204, line: formatCspReport(report as CspReport) }
 }
 
-// Lecture bornée : on s'arrête dès que la limite est dépassée, même sans Content-Length (envoi par morceaux)
+// Un caractère UTF-8 fait au plus 4 octets : au-delà de ce volume, le corps est trop long quel que soit son contenu
+const MAX_REPORT_BYTES = MAX_REPORT_LENGTH * 4
+
+// Lecture bornée, même sans Content-Length (envoi par morceaux). Au-delà de la limite, le corps est lu sans être gardé :
+// annuler le flux ferait couper la connexion par le serveur avant la réponse 413. Il n'est annulé qu'au-delà de
+// MAX_REPORT_BYTES, pour un client qui enverrait sans fin.
 const readBounded = async (request: Request) => {
-  if (Number(request.headers.get('content-length') ?? 0) > MAX_REPORT_LENGTH * 4) return null
+  if (Number(request.headers.get('content-length') ?? 0) > MAX_REPORT_BYTES) return null
   if (!request.body) return ''
   const reader = request.body.getReader()
   const decoder = new TextDecoder()
   let text = ''
+  let bytes = 0
+  let tooLong = false
   for (;;) {
     const { done, value } = await reader.read()
-    if (done) return text + decoder.decode()
-    text += decoder.decode(value, { stream: true })
-    if (text.length > MAX_REPORT_LENGTH) {
+    if (done) return tooLong ? null : text + decoder.decode()
+    bytes += value.byteLength
+    if (bytes > MAX_REPORT_BYTES) {
       await reader.cancel()
       return null
+    }
+    if (tooLong) continue
+    text += decoder.decode(value, { stream: true })
+    if (text.length > MAX_REPORT_LENGTH) {
+      tooLong = true
+      text = ''
     }
   }
 }
